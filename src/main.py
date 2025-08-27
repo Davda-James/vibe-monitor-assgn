@@ -1,10 +1,19 @@
 from fastapi import FastAPI
-import requests as req
 from prometheus_fastapi_instrumentator import Instrumentator
-from fastapi.responses import Response
+from fastapi.middleware.cors import CORSMiddleware
 import logging
+import httpx
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 Instrumentator().instrument(app).expose(app)
 
@@ -16,5 +25,6 @@ def read_root():
 @app.get("/api/serve")
 async def serve():
     logging.info("Quote endpoint called")
-    response = await req.get("/api/quotes/random")
-    return response.json()
+    async with httpx.AsyncClient() as client:
+        response = await client.get("https://dummyjson.com/quotes/1")
+        return response.json()
